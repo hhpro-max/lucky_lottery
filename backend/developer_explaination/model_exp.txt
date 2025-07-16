@@ -1,0 +1,104 @@
+# Developer Explanation: Lottery App Models
+
+This document provides a comprehensive explanation of all models in the backend of the Lottery App, describing their purpose and relationships.
+
+---
+
+## 1. User
+Represents a registered user of the lottery platform. Stores authentication details, roles, and last login information.
+
+## 2. Profile
+Contains personal information for each user, such as name, date of birth, address, phone, and KYC status. Linked to the User model.
+
+## 3. Wallet
+Tracks the balance and currency for each user. Each user has one wallet, and all transactions reference a wallet.
+
+## 4. Transaction
+Records all financial operations (credits, debits) related to a user's wallet, such as ticket purchases and payouts.
+
+## 5. GameType
+Defines the types of lottery games available (e.g., Daily 6, Weekly Jackpot). Each LotteryDraw references a GameType.
+
+## 6. LotteryDraw
+Represents a specific lottery draw event, including its date, status, and associated GameType.
+
+## 7. DrawResult
+Stores the winning numbers for a specific LotteryDraw.
+
+## 8. PrizeTier
+Defines the prize structure for each draw, specifying the number of matches and corresponding prize amounts.
+
+## 9. Jackpot
+Represents the jackpot amount for a specific LotteryDraw.
+
+## 10. Ticket
+Represents a user's entry into a LotteryDraw, including selected numbers, purchase time, and status (winner/loser).
+
+## 11. Payout
+Records the payout details for winning tickets, including amount, payment method, and payment date.
+
+## 12. Affiliate
+Tracks users who refer others to the platform. Each affiliate has a unique code and is linked to a user.
+
+## 13. Referral
+Represents a user who was referred by an affiliate. Links the referred user to the affiliate.
+
+## 14. Announcement
+Used for system-wide messages or notifications to users (e.g., maintenance, news).
+
+## 15. SupportTicket
+Allows users to submit support requests or questions. Tracks status and messages.
+
+## 16. AuditLog
+Logs important actions performed by users (e.g., login, ticket purchase) for security and auditing.
+
+## 17. Notification
+Stores notifications sent to users (e.g., win/loss messages, system alerts).
+
+## 18. Permission
+Defines specific actions that can be assigned to roles (e.g., create_draw, manage_settings).
+
+## 19. Role
+Defines user roles (e.g., player, admin) for access control.
+
+## 20. RolePermission
+Associates permissions with roles, enabling role-based access control.
+
+## 21. Setting
+Stores key-value configuration settings for the platform (e.g., support email, ticket price limits).
+
+## 22. Country
+Represents supported countries, including their currency codes.
+
+## 23. Currency
+Defines supported currencies, including code, name, and symbol.
+
+## 24. EmailVerification
+Tracks email verification tokens and status for users.
+
+## 25. SecurityToken
+Stores tokens for user authentication (e.g., refresh tokens, password resets).
+
+---
+
+### Relationships Summary
+- User ↔ Profile (1:1)
+- User ↔ Wallet (1:1)
+- User ↔ Ticket (1:M)
+- User ↔ Affiliate (1:1)
+- Affiliate ↔ Referral (1:M)
+- LotteryDraw ↔ DrawResult (1:1)
+- LotteryDraw ↔ PrizeTier (1:M)
+- LotteryDraw ↔ Jackpot (1:1)
+- LotteryDraw ↔ Ticket (1:M)
+- Ticket ↔ Payout (1:1)
+- Role ↔ RolePermission (1:M)
+- Permission ↔ RolePermission (1:M)
+- Country ↔ Currency (M:1)
+- User ↔ SupportTicket (1:M)
+- User ↔ Notification (1:M)
+- User ↔ AuditLog (1:M)
+- User ↔ EmailVerification (1:M)
+- User ↔ SecurityToken (1:M)
+
+This structure ensures a robust, scalable, and secure backend for the lottery platform, supporting user management, game operations, financial tracking, and system administration.

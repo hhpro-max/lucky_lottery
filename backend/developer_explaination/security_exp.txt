@@ -1,0 +1,46 @@
+# Security Features Overview
+
+This backend implements robust security best practices for authentication, authorization, and user management. Below is a summary of the key security features:
+
+## 1. Authentication
+- **Signup/Login/Refresh/Logout** endpoints using JWT (access and refresh tokens).
+- Passwords are securely hashed with bcrypt before storage.
+- Refresh tokens are stored in the database and invalidated on logout or password reset.
+
+## 2. Email Verification
+- Users must verify their email before logging in.
+- Verification tokens are sent via email and expire after 24 hours.
+
+## 3. Password Reset
+- Secure password reset flow with time-limited tokens sent via email.
+- All refresh tokens are invalidated after a password reset.
+
+## 4. Account Lockout
+- Accounts are locked for 15 minutes after 5 failed login attempts to prevent brute-force attacks.
+
+## 5. Authorization (RBAC)
+- Role-based access control middleware restricts access to admin endpoints and sensitive actions.
+
+## 6. Audit Logging
+- All sensitive actions (signup, login, logout, password reset, failed logins) are logged in the `AuditLog` table with user, action, IP, and timestamp.
+
+## 7. CORS Policy
+- In production, only trusted origins (from `CORS_ORIGIN` env variable) are allowed. All origins are allowed in development.
+
+## 8. Error Handling
+- Error messages are generic and do not leak sensitive information about user existence or system internals.
+
+## 9. User Status
+- Only users with status `active` can log in. Users can be locked or deleted by status.
+
+## 10. Two-Factor Authentication (2FA)
+- Admins can enable 2FA (TOTP) for additional login security. 2FA is enforced for admin logins if enabled.
+
+## 11. Security Middleware
+- Helmet is used for secure HTTP headers.
+- Rate limiting is applied to authentication and sensitive routes.
+- Input validation is enforced on all endpoints using Joi schemas.
+
+---
+
+**This setup provides a strong foundation for secure user authentication and management in a modern web application.**
