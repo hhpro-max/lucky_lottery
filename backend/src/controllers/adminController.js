@@ -1,5 +1,7 @@
 const db = require('../models');
 
+// --- User Management ---
+
 exports.listUsers = async (req, res) => {
   try {
     const users = await db.User.findAll({ attributes: { exclude: ['password_hash'] } });
@@ -17,7 +19,6 @@ exports.updateUserRoles = async (req, res) => {
     if (!Array.isArray(roles) || roles.length === 0) {
       return res.status(400).json({ message: 'Roles must be a non-empty array' });
     }
-    // Optionally: validate roles against allowed roles
     const allowedRoles = ['player', 'admin'];
     if (!roles.every(r => allowedRoles.includes(r))) {
       return res.status(400).json({ message: 'Invalid role(s) specified' });
@@ -116,6 +117,52 @@ exports.listDraws = async (req, res) => {
   }
 };
 
+// --- Support Ticket Management ---
+
+exports.getAllSupportTickets = async (req, res) => {
+  try {
+    const { status, user_id, page = 1, pageSize = 20 } = req.query;
+    const where = {};
+    if (status) where.status = status;
+    if (user_id) where.user_id = user_id;
+    const offset = (parseInt(page) - 1) * parseInt(pageSize);
+    const tickets = await db.SupportTicket.findAndCountAll({
+      where,
+      limit: parseInt(pageSize),
+      offset,
+      order: [['created_at', 'DESC']],
+      include: [{ model: db.User, attributes: ['id', 'email'] }],
+    });
+    res.json({
+      tickets: tickets.rows,
+      total: tickets.count,
+      page: parseInt(page),
+      pageSize: parseInt(pageSize),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+ 
+// PATCH /admin/support/tickets/:id
+exports.updateSupportTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, admin_reply } = req.body;
+    const ticket = await db.SupportTicket.findByPk(id);
+    if (!ticket) return res.status(404).json({ message: 'Support ticket not found' });
+    if (status) ticket.status = status;
+    if (admin_reply) ticket.admin_reply = admin_reply;
+    if (status === 'closed') ticket.closed_at = new Date();
+    await ticket.save();
+    res.json({ message: 'Support ticket updated', ticket });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 exports.createDraw = async (req, res) => {
   try {
     const { game_type_id, draw_time } = req.body;
@@ -151,13 +198,13 @@ exports.drawNumbers = async (req, res) => {
     const draw = await db.LotteryDraw.findByPk(id);
     if (!draw) return res.status(404).json({ message: 'Draw not found' });
     if (draw.status !== 'completed') return res.status(400).json({ message: 'Draw must be closed before drawing numbers' });
-    // Create DrawResult
+
     const drawResult = await db.DrawResult.create({
       lottery_draw_id: id,
       numbers,
       draw_time: new Date(),
     });
-    // Create PrizeTiers
+
     if (Array.isArray(prizeTiers)) {
       for (const tier of prizeTiers) {
         await db.PrizeTier.create({
@@ -167,7 +214,7 @@ exports.drawNumbers = async (req, res) => {
         });
       }
     }
-    // Create Jackpot
+
     if (jackpotAmount) {
       await db.Jackpot.create({
         lottery_draw_id: id,
@@ -175,6 +222,7 @@ exports.drawNumbers = async (req, res) => {
         rolled_over: false,
       });
     }
+
     res.json({ message: 'Draw results entered', drawResult });
   } catch (err) {
     console.error(err);
@@ -186,28 +234,32 @@ exports.settleDraw = async (req, res) => {
   const { id } = req.params;
   const t = await db.sequelize.transaction();
   try {
-    // 1. Find draw, result, prize tiers
     const draw = await db.LotteryDraw.findByPk(id, { transaction: t });
     if (!draw) return res.status(404).json({ message: 'Draw not found' });
     if (draw.status !== 'completed') return res.status(400).json({ message: 'Draw not ready for settlement' });
+
     const drawResult = await db.DrawResult.findOne({ where: { lottery_draw_id: id }, transaction: t });
     if (!drawResult) return res.status(400).json({ message: 'Draw result not entered' });
+
     const prizeTiers = await db.PrizeTier.findAll({ where: { lottery_draw_id: id }, transaction: t });
     if (!prizeTiers.length) return res.status(400).json({ message: 'No prize tiers defined' });
-    // 2. Get all tickets for this draw
+
     const tickets = await db.Ticket.findAll({ where: { lottery_draw_id: id, status: 'pending' }, transaction: t });
     if (!tickets.length) return res.json({ message: 'No tickets to settle' });
-    // 3. Prepare prize tier map
+
     const tierMap = {};
-    for (const tier of prizeTiers) tierMap[tier.match_count] = parseFloat(tier.prize_amount);
-    // 4. Match tickets, create payouts, update wallets
-    let payoutCount = 0, totalPaid = 0;
+    for (const tier of prizeTiers) {
+      tierMap[tier.match_count] = parseFloat(tier.prize_amount);
+    }
+
+    let payoutCount = 0;
+    let totalPaid = 0;
+
     for (const ticket of tickets) {
-      // Count matching numbers
       const matchCount = ticket.numbers.filter(n => drawResult.numbers.includes(n)).length;
       const prize = tierMap[matchCount];
+
       if (prize) {
-        // Winner: create payout, credit wallet, update ticket
         await db.Payout.create({
           user_id: ticket.user_id,
           ticket_id: ticket.id,
@@ -215,18 +267,20 @@ exports.settleDraw = async (req, res) => {
           status: 'completed',
           processed_at: new Date(),
         }, { transaction: t });
+
         await db.Wallet.increment(
           { balance: prize },
           { where: { user_id: ticket.user_id }, transaction: t }
         );
+
         await ticket.update({ status: 'winner' }, { transaction: t });
         payoutCount++;
         totalPaid += prize;
       } else {
-        // Not a winner
         await ticket.update({ status: 'loser' }, { transaction: t });
       }
     }
+
     await t.commit();
     res.json({ message: 'Draw settled', payoutCount, totalPaid });
   } catch (err) {
@@ -234,4 +288,60 @@ exports.settleDraw = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Internal server error' });
   }
-}; 
+};
+
+exports.getSupportTicketStats = async (req, res) => {
+  try {
+    const open = await db.SupportTicket.count({ where: { status: 'open' } });
+    const closed = await db.SupportTicket.count({ where: { status: 'closed' } });
+    const pending = await db.SupportTicket.count({ where: { status: 'pending' } });
+    res.json({ open, closed, pending });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.createNotification = async (req, res) => {
+  try {
+    const { user_id, title, message, type } = req.body;
+    if (!user_id || !title || !message) {
+      return res.status(400).json({ message: 'user_id, title, and message are required' });
+    }
+    const notification = await db.Notification.create({
+      user_id,
+      title,
+      message,
+      type: type || 'info',
+      read: false,
+      created_at: new Date()
+    });
+    res.status(201).json({ message: 'Notification created', notification });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.createBulkNotification = async (req, res) => {
+  try {
+    const { user_ids, title, message, type } = req.body;
+    if (!Array.isArray(user_ids) || user_ids.length === 0 || !title || !message) {
+      return res.status(400).json({ message: 'user_ids (array), title, and message are required' });
+    }
+    const notifications = await Promise.all(user_ids.map(user_id =>
+      db.Notification.create({
+        user_id,
+        title,
+        message,
+        type: type || 'info',
+        read: false,
+        created_at: new Date()
+      })
+    ));
+    res.status(201).json({ message: 'Bulk notifications created', notifications });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
