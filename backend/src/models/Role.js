@@ -1,23 +1,18 @@
 module.exports = (sequelize, DataTypes) => {
-  const PrizeTier = sequelize.define('PrizeTier', {
+  const Role = sequelize.define('Role', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    lottery_draw_id: {
-      type: DataTypes.INTEGER,
+    name: {
+      type: DataTypes.STRING,
       allowNull: false,
-      references: { model: 'lottery_draws', key: 'id' },
-      onDelete: 'CASCADE',
+      unique: true,
     },
-    match_count: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    prize_amount: {
-      type: DataTypes.DECIMAL(18, 2),
-      allowNull: false,
+    description: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     created_at: {
       type: DataTypes.DATE,
@@ -28,10 +23,10 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: DataTypes.NOW,
     },
   }, {
-    tableName: 'prize_tiers',
+    tableName: 'roles',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   });
-  return PrizeTier;
+  return Role;
 }; 

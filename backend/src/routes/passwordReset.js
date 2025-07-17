@@ -1,3 +1,29 @@
+/**
+ * @swagger
+ * tags:
+ *   name: PasswordReset
+ *   description: Password reset endpoints
+ */
+
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Request a password reset email
+ *     tags: [PasswordReset]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: If your email exists, a reset link has been sent
+ */
 const express = require('express');
 const router = express.Router();
 const { requestPasswordReset, resetPassword } = require('../utils/passwordReset');
@@ -12,6 +38,29 @@ router.post('/forgot-password', async (req, res) => {
   return res.json({ message: 'If your email exists, a reset link has been sent.' });
 });
 
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Reset password using token
+ *     tags: [PasswordReset]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *       400:
+ *         description: Invalid or expired token
+ */
 // POST /auth/reset-password
 router.post('/reset-password', async (req, res) => {
   const { token, password } = req.body;

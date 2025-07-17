@@ -8,21 +8,20 @@ module.exports = (sequelize, DataTypes) => {
     lottery_draw_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      unique: true,
       references: { model: 'lottery_draws', key: 'id' },
       onDelete: 'CASCADE',
     },
     winning_numbers: {
       type: DataTypes.ARRAY(DataTypes.INTEGER),
-      allowNull: false,
+      allowNull: true,
     },
-    result_time: {
+    created_at: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
-    published: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
+    updated_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
   }, {
     tableName: 'draw_results',

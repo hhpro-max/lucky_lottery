@@ -1,9 +1,15 @@
 module.exports = (sequelize, DataTypes) => {
-  const PrizeTier = sequelize.define('PrizeTier', {
+  const Ticket = sequelize.define('Ticket', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
+    },
+    user_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: { model: 'users', key: 'id' },
+      onDelete: 'CASCADE',
     },
     lottery_draw_id: {
       type: DataTypes.INTEGER,
@@ -11,13 +17,18 @@ module.exports = (sequelize, DataTypes) => {
       references: { model: 'lottery_draws', key: 'id' },
       onDelete: 'CASCADE',
     },
-    match_count: {
-      type: DataTypes.INTEGER,
+    numbers: {
+      type: DataTypes.ARRAY(DataTypes.INTEGER),
       allowNull: false,
     },
-    prize_amount: {
-      type: DataTypes.DECIMAL(18, 2),
+    purchase_time: {
+      type: DataTypes.DATE,
       allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM('pending', 'winner', 'loser'),
+      allowNull: false,
+      defaultValue: 'pending',
     },
     created_at: {
       type: DataTypes.DATE,
@@ -28,10 +39,10 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: DataTypes.NOW,
     },
   }, {
-    tableName: 'prize_tiers',
+    tableName: 'tickets',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   });
-  return PrizeTier;
+  return Ticket;
 }; 

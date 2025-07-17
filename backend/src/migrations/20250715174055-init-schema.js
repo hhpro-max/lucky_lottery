@@ -73,6 +73,8 @@ module.exports = {
       id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
       name: { type: Sequelize.STRING, allowNull: false, unique: true },
       description: { type: Sequelize.STRING, allowNull: true },
+      rules: { type: Sequelize.TEXT, allowNull: true },
+      active: { type: Sequelize.BOOLEAN, defaultValue: true },
       created_at: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
       updated_at: { type: Sequelize.DATE, defaultValue: Sequelize.NOW },
     });
@@ -215,7 +217,7 @@ module.exports = {
     // AuditLog
     await queryInterface.createTable('audit_logs', {
       id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
-      user_id: { type: Sequelize.INTEGER, allowNull: false, references: { model: 'users', key: 'id' }, onDelete: 'CASCADE' },
+      actor_id: { type: Sequelize.INTEGER, allowNull: false, references: { model: 'users', key: 'id' }, onDelete: 'CASCADE' },
       action: { type: Sequelize.STRING, allowNull: false },
       details: { type: Sequelize.JSON, allowNull: true },
       ip_address: { type: Sequelize.STRING, allowNull: true },

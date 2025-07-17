@@ -58,7 +58,7 @@ db.Notification.belongsTo(db.User, { foreignKey: 'user_id' });
 db.User.hasMany(db.SupportTicket, { foreignKey: 'user_id' });
 db.SupportTicket.belongsTo(db.User, { foreignKey: 'user_id' });
 db.User.hasMany(db.AuditLog, { foreignKey: 'actor_id' });
-db.AuditLog.belongsTo(db.User, { foreignKey: 'actor_id' });
+db.AuditLog.belongsTo(db.User, { foreignKey: 'actor_id', as: 'actor' });
 db.User.hasMany(db.EmailVerification, { foreignKey: 'user_id' });
 db.EmailVerification.belongsTo(db.User, { foreignKey: 'user_id' });
 db.User.hasMany(db.SecurityToken, { foreignKey: 'user_id' });
@@ -69,7 +69,7 @@ db.Affiliate.belongsTo(db.User, { foreignKey: 'user_id' });
 // Affiliate/Referral
 db.Affiliate.hasMany(db.Referral, { foreignKey: 'affiliate_id' });
 db.Referral.belongsTo(db.Affiliate, { foreignKey: 'affiliate_id' });
-db.Referral.belongsTo(db.User, { foreignKey: 'referred_user_id' });
+db.Referral.belongsTo(db.User, { foreignKey: 'user_id' });
 
 // Wallet/Transaction
 db.Wallet.hasMany(db.Transaction, { foreignKey: 'wallet_id' });

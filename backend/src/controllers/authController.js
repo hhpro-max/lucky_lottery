@@ -7,7 +7,7 @@ const { sendVerificationEmail } = require('../utils/emailVerification');
 const sendMail = require('../utils/sendMail');
 exports.signup = async (req, res) => {
   try {
-    const { email, password, name, dob, address, phone } = req.body;
+    const { email, password } = req.body;
     // Check if user already exists
     const existing = await db.User.findOne({ where: { email } });
     if (existing) {
@@ -18,19 +18,11 @@ exports.signup = async (req, res) => {
     const password_hash = await hashPassword(password);
     // Create user
     const user = await db.User.create({ email, password_hash });
-    // Create profile
-    await db.Profile.create({
-      user_id: user.id,
-      name,
-      dob,
-      address,
-      phone,
-    });
     // Send verification email
     await sendVerificationEmail(user, sendMail);
     // Audit log
     await db.AuditLog.create({
-      user_id: user.id,
+      actor_id: user.id,
       action: 'signup',
       details: { email },
       ip_address: req.ip,
@@ -53,7 +45,7 @@ exports.login = async (req, res) => {
     }
     // User status check
     if (user.status !== 'active') {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Your account is not active. Please contact support.' });
     }
     // Account lockout check
     if (user.lockout_until && user.lockout_until > new Date()) {
@@ -61,7 +53,7 @@ exports.login = async (req, res) => {
     }
     if (!user.email_verified) {
       // Do not reveal if email is registered or not
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Your email is not verified. Please check your email for verification.' });
     }
     const valid = await verifyPassword(password, user.password_hash);
     if (!valid) {
@@ -75,7 +67,7 @@ exports.login = async (req, res) => {
       await db.User.update(updates, { where: { id: user.id } });
       // Audit log failed login
       await db.AuditLog.create({
-        user_id: user.id,
+        actor_id: user.id,
         action: 'login_failed',
         details: { email },
         ip_address: req.ip,
@@ -95,7 +87,7 @@ exports.login = async (req, res) => {
     }
     // Audit log successful login
     await db.AuditLog.create({
-      user_id: user.id,
+      actor_id: user.id,
       action: 'login',
       details: { email },
       ip_address: req.ip,
@@ -166,7 +158,7 @@ exports.logout = async (req, res) => {
     // Audit log
     if (tokenRecord) {
       await db.AuditLog.create({
-        user_id: tokenRecord.user_id,
+        actor_id: tokenRecord.user_id,
         action: 'logout',
         details: {},
         ip_address: req.ip,

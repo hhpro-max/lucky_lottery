@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       references: { model: 'affiliates', key: 'id' },
       onDelete: 'CASCADE',
     },
-    referred_user_id: {
+    user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: 'users', key: 'id' },

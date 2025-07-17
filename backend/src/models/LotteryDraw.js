@@ -16,13 +16,17 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM('scheduled', 'open', 'closed', 'drawn'),
+      type: DataTypes.ENUM('scheduled', 'completed', 'cancelled'),
       allowNull: false,
       defaultValue: 'scheduled',
     },
-    winning_numbers: {
-      type: DataTypes.ARRAY(DataTypes.INTEGER),
-      allowNull: true,
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
   }, {
     tableName: 'lottery_draws',
